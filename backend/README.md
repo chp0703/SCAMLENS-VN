@@ -27,9 +27,16 @@ backend/
 │   └── core/
 │       ├── __init__.py
 │       └── config.py            # Cấu hình, biến môi trường
-├── ml/
-│   ├── train.py                 # Training / fine-tuning
-│   └── evaluate.py              # Đánh giá mô hình
+├── src/
+│   ├── ML/
+│   │   ├── train.py             # Huấn luyện mô hình ML
+│   │   └── evaluate.py          # Đánh giá mô hình ML
+│   ├── DL/
+│   │   └── .gitkeep             # Chỗ đặt code deep learning
+│   └── JEFF/
+│       └── .gitkeep             # Chỗ đặt code JEFF; chức năng chưa xác định
+├── data/
+│   └── vietnamese_sms_dataset/  # Dataset gốc dùng chung cho các nhánh
 ├── artifacts/
 │   └── .gitkeep                 # Chỗ đặt model weights/tokenizer (không commit file lớn)
 ├── tests/
@@ -51,7 +58,10 @@ backend/
 | `app/services/classifier.py` | Load artifacts và chạy dự đoán; không train model tại đây. |
 | `app/services/llm_service.py` | Gọi local LLM (ví dụ Ollama) để diễn giải dự đoán và đưa khuyến nghị. |
 | `app/core/config.py` | Đọc config/model path/LLM endpoint từ environment. |
-| `ml/` | Script offline chuẩn bị dữ liệu, train và evaluate. Có thể thêm `prepare_data.py` khi cần. |
+| `src/ML/` | Script offline chuẩn bị dữ liệu, train và evaluate các mô hình ML. |
+| `src/DL/` | Code huấn luyện và đánh giá các mô hình deep learning. |
+| `src/JEFF/` | Thư mục theo tên được yêu cầu; chức năng chưa xác định. |
+| `data/vietnamese_sms_dataset/` | Dataset gốc dùng chung, tài liệu tác giả và metadata nguồn trong `source.json`. |
 | `artifacts/` | Lưu model checkpoint, tokenizer, metadata ở máy chạy; không commit artifacts lớn hay nhạy cảm. |
 | `tests/` | Unit test, API test; mock classifier/LLM để test độc lập. |
 
@@ -73,7 +83,18 @@ LLM sinh giải thích và khuyến nghị
 JSON response → Frontend
 ```
 
-**Phân biệt:** `ml/train.py` là nơi huấn luyện; `app/services/classifier.py` chỉ inference bằng model đã train.
+**Phân biệt:** `src/ML/train.py` là nơi huấn luyện; `app/services/classifier.py` chỉ inference bằng model đã train.
+
+## Dataset đã tải
+
+Nguồn: [Vietnamese SMS Dataset](https://github.com/trannguyenthaituan251209/vietnamese_sms_dataset), revision `464a028878023598e16f2f344ee36f7d5d74257f`. Giữ nguyên các file từ nguồn trong `data/vietnamese_sms_dataset/`:
+
+- `full_dataset.csv`: 2.991 mẫu.
+- `train.csv`: 2.394 mẫu; `test.csv`: 597 mẫu (split gốc của tác giả).
+- `README.md`, `QUICKSTART_GUIDE.md`: tài liệu nguồn và thông tin ghi công; nguồn công bố giấy phép CC BY 4.0.
+- `source.json`: URL nguồn, revision, thời điểm tải, số mẫu và SHA-256 của các file đã tải.
+
+Kiểm tra trực tiếp dữ liệu tải về cho thấy **47 dòng test có nội dung trùng chính xác với train**. Cần tạo split train/validation/test chống trùng trước khi dùng để đánh giá độc lập; chưa thay đổi split gốc trong bước tải dữ liệu này. Nhãn `0` là hợp lệ, `1` gộp rác/lừa đảo, nên chưa thể dùng bộ này để khẳng định phân biệt riêng spam quảng cáo với lừa đảo.
 
 ## API contract dự kiến (chưa triển khai)
 
