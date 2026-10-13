@@ -2,7 +2,7 @@
 
 Backend cho **ScamLens-VN**: nhận một đoạn văn bản do người dùng **nhập thủ công**, dùng mô hình ML để đánh giá dấu hiệu lừa đảo, sau đó dùng LLM để giải thích kết quả và gợi ý cách xử lý.
 
-> **Phạm vi MVP:** Chỉ phân tích văn bản nhập thủ công. Không kết nối Gmail, không đọc email tự động, không OAuth và không thực hiện thao tác trên hộp thư.
+> **Phạm vi MVP:** Chỉ phân tích văn bản nhập thủ công. 
 >
 > **Trạng thái:** Đây là cấu trúc khởi tạo (scaffold). Các file Python có thể đang trống; chưa phải backend chạy hoàn chỉnh.
 
