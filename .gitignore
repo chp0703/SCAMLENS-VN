@@ -1,6 +1,8 @@
 
 # Local environments and project documents
 .venv/
+/.venv-preprocessing/
+/backend/tests/.tmp/
 /ScamLens_VN_Ke_Hoach_8_Tuan_Gon.docx
 /ScamLens_VN_Master_Project_Proposal.pdf
 
