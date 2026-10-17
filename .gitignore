@@ -1,0 +1,15 @@
+
+# Local environments and project documents
+.venv/
+/ScamLens_VN_Ke_Hoach_8_Tuan_Gon.docx
+/ScamLens_VN_Master_Project_Proposal.pdf
+
+# Keep structure and team input templates; exclude local datasets.
+!/backend/data/
+/backend/data/**
+!/backend/data/**/
+!/backend/data/**/.gitkeep
+!/backend/data/raw/chp0703/ham.txt
+!/backend/data/raw/chp0703/scam.txt
+/backend/experiments/**
+!/backend/experiments/.gitkeep
