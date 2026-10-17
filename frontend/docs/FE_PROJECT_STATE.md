@@ -45,6 +45,7 @@ Các resolved version chính xác được ghi trong `package-lock.json`.
 - lint-staged và pre-commit hook chỉ áp dụng trong phạm vi Frontend đã được bổ sung.
 - `.gitignore` đã bao phủ dependencies, build/test output, caches, environment files, TypeScript artifacts, Husky internals và OS/editor files.
 - Tài liệu onboarding, team workflow, Codex constraints, project state và worklog đã được tạo.
+- Sitemap và user-flow proposal cho Home, Scam Analyzer, Chatbot và Scam Academy được ghi trong `docs/SITEMAP_USER_FLOWS.md`; nội dung đang chờ Frontend team review.
 
 Xem `docs/worklogs/kentlatoi.md` để biết commands và kết quả thực tế của Frontend Foundation.
 
