@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+
+HOOK_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd)
+FRONTEND_DIR=$(CDPATH= cd "$HOOK_DIR/.." && pwd)
+
+if ! REPO_ROOT=$(git -C "$FRONTEND_DIR" rev-parse --show-toplevel 2>/dev/null); then
+  echo "Unable to locate the Git repository that contains '$FRONTEND_DIR'." >&2
+  exit 1
+fi
+
+FRONTEND_PATH=$(git -C "$FRONTEND_DIR" rev-parse --show-prefix)
+
+cd "$REPO_ROOT" || exit 1
+
+# Pathspecs below are evaluated from the repository root. Deleted files do not
+# need linting, while added, copied, modified, and renamed Frontend files do.
+if git diff --cached --quiet --diff-filter=ACMR -- "$FRONTEND_PATH"; then
+  exit 0
+else
+  DIFF_STATUS=$?
+fi
+
+if [ "$DIFF_STATUS" -ne 1 ]; then
+  echo "Unable to inspect staged Frontend files (git diff exited $DIFF_STATUS)." >&2
+  exit "$DIFF_STATUS"
+fi
+
+LINT_STAGED="$FRONTEND_DIR/node_modules/.bin/lint-staged"
+
+if [ ! -x "$LINT_STAGED" ]; then
+  echo "Frontend dependencies are missing. Run 'cd frontend && npm ci', then retry the commit." >&2
+  exit 1
+fi
+
+cd "$FRONTEND_DIR" || exit 1
+"$LINT_STAGED" --config .lintstagedrc.json
