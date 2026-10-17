@@ -1,60 +1,96 @@
-import csv, re, sys
+import csv
+import re
+import sys
 from datetime import date
 from pathlib import Path
 
-PREFIX = {1: "FRI", 2: "COM", 3: "PHONE", 4: "NEWS", 5: "BANK",
-          6: "TE", 7: "WEB", 8: "SYN", 9: "MIX"}
+# Ma nhom noi dung -> tien to message_id
+PREFIX = {
+    1: "FRI",
+    2: "COM",
+    3: "PHONE",
+    4: "NEWS",
+    5: "BANK",
+    6: "TE",
+    7: "WEB",
+    8: "SYN",
+    9: "MIX",
+}
 
-if len(sys.argv) < 2:
-    sys.exit("Cach dung: python build_dataset.py A   (A = ma thanh vien)")
-member = sys.argv[1].upper()
+# Dinh dang cu: 3 | noi dung tin nhan
+PIPE_START = re.compile(r"^\s*(\d{1,2})\s*\|\s*(.*)$")
 
-START = re.compile(r"^\s*(\d{1,2})\s*\|\s*(.*)$")
-rows, errors = [], []
+# Che so dien thoai Viet Nam dang lien nhau hoac co dau cach/gach.
+# Vi du: 0912345678, 0912 345 678, +84 912345678.
+PHONE_RE = re.compile(
+    r"(?<!\d)(?:0(?:[\s().-]*\d){9,10}|\+?84(?:[\s().-]*\d){9})(?!\d)"
+)
 
-for fname, label in (("scam.txt", 1), ("ham.txt", 0)):
-    cur = None
-    lines = Path(fname).read_text(encoding="utf-8-sig").splitlines()
-    for n, line in enumerate(lines, 1):
-        m = START.match(line)
-        if m:
-            if cur:
-                rows.append(cur)
-            code = int(m.group(1))
-            if code not in PREFIX:
-                errors.append(f"{fname} dong {n}: ma {code} khong hop le")
-                cur = None
-            else:
-                cur = {"prefix": PREFIX[code], "message": m.group(2), "label": label}
-        elif line.strip():
-            if cur:
-                cur["message"] += " " + line.strip()
-            else:
-                errors.append(f"{fname} dong {n}: thieu 'so|' o dau tin")
-    if cur:
-        rows.append(cur)
 
-if errors:
-    sys.exit("\n".join(errors[:30]))
+def clean_message(text: str) -> str:
+    """Chuan hoa khoang trang va che so dien thoai."""
+    text = str(text or "")
+    text = PHONE_RE.sub("[NUMBER]", text)
+    return " ".join(text.split())
 
-today = date.today().strftime("%d/%m/%Y")
-seen, count, out_rows = set(), {}, []
-for r in rows:
-    msg = re.sub(r"\b0\d{9,10}\b", "[NUMBER]", r["message"])  # che SDT
-    msg = " ".join(msg.split())
-    key = msg.lower()
-    if len(msg) <= 5 or key in seen:
-        continue
-    seen.add(key)
-    p = r["prefix"]
-    count[p] = count.get(p, 0) + 1
-    out_rows.append([f"{p}_{member}{count[p]:04d}", today, msg, r["label"]])
 
-out = f"out_{member}.csv"
-with open(out, "w", newline="", encoding="utf-8-sig") as f:
-    w = csv.writer(f)
-    w.writerow(["message_id", "date", "message", "label"])
-    w.writerows(out_rows)
+def is_header(row) -> bool:
+    """Nhan dien dong tieu de cua file TSV xuat tu Excel."""
+    if len(row) < 2:
+        return False
+    first = row[0].strip().casefold()
+    second = row[1].strip().casefold()
+    return first in {"nhãn", "label", "mã", "ma", "code"} and second in {
+        "text", "message", "tin nhắn", "tin nhan"
+    }
 
-n1 = sum(r[3] for r in out_rows)
-print(f"Xong: {len(out_rows)} mau -> {out} | scam: {n1}, ham: {len(out_rows) - n1}")
+
+def read_tsv(path: Path, label: int):
+    """Doc file dang bang: cot 1 = ma nhom, cot 2 = noi dung.
+
+    csv.reader xu ly duoc noi dung co nhieu dong neu o Excel duoc bao bang ngoac kep.
+    Cac cot trong them (neu co) se duoc bo qua.
+    """
+    records, errors = [], []
+    try:
+        with path.open("r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.reader(f, delimiter="\t", quotechar='"')
+            for row_no, row in enumerate(reader, start=1):
+                if not row or not any(cell.strip() for cell in row):
+                    continue
+                if row_no == 1 and is_header(row):
+                    continue
+                if len(row) < 2:
+                    errors.append(f"{path.name}, ban ghi {row_no}: khong co cot noi dung")
+                    continue
+
+                code_text = row[0].strip()
+                if not re.fullmatch(r"\d{1,2}", code_text):
+                    errors.append(
+                        f"{path.name}, ban ghi {row_no}: ma nhom '{code_text}' khong hop le"
+                    )
+                    continue
+
+                code = int(code_text)
+                if code not in PREFIX:
+                    errors.append(
+                        f"{path.name}, ban ghi {row_no}: ma {code} khong nam trong 1-9"
+                    )
+                    continue
+
+                message = row[1].strip()
+                if not message:
+                    errors.append(f"{path.name}, ban ghi {row_no}: tin nhan rong")
+                    continue
+
+                records.append({
+                    "prefix": PREFIX[code],
+                    "message": message,
+                    "label": label,
+                    "source": path.name,
+                    "row_no": row_no,
+                })
+    except (OSError, csv.Error) as exc:
+        errors.append(f"Khong doc duoc {path.name}: {exc}")
+
+    return records, errors
