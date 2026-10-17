@@ -1,2 +1,5 @@
 ﻿fastapi>=0.115
 uvicorn[standard]>=0.30
+scikit-learn>=1.5
+
+\ No newline at end of file
