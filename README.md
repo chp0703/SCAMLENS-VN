@@ -35,5 +35,5 @@ Xem [README backend](backend/README.md) để biết cấu trúc chi tiết, cá
 
 - Dữ liệu nguồn ở `backend/data/raw/`, dữ liệu xử lý ở `processed/`, các tập train/validation/test ở `splits/`.
 - Training nằm trong `backend/src/`; service trong `backend/app/` phục vụ API và load model đã lưu.
-- Không commit secrets, dữ liệu cá nhân, môi trường Python, đầu ra thí nghiệm hoặc model nặng. Git giữ `.gitkeep` và hai file mẫu `data/raw/chp0703/ham.txt`, `scam.txt`.
+- Không commit secrets, dữ liệu cá nhân, môi trường Python, đầu ra thí nghiệm hoặc model nặng. 
 - Chốt nhãn, cách chia dữ liệu và tiêu chí đánh giá trước khi so sánh model. Giải thích do LLM tạo không tự chứng minh kết quả phân loại là đúng.
