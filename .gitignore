@@ -3,6 +3,8 @@
 .venv/
 /ScamLens_VN_Ke_Hoach_8_Tuan_Gon.docx
 /ScamLens_VN_Master_Project_Proposal.pdf
+/backend/docs/ScamLens_Tasks_v2.docx
+/CLAUDE.md
 
 # Keep structure and team input templates; exclude local datasets.
 !/backend/data/
