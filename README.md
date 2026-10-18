@@ -43,7 +43,7 @@ Xem [README backend](backend/README.md) để biết cấu trúc, hướng dẫn
 
 ## Preprocessing
 
-Đặt nguồn local tại `backend/data/raw/vietnamese_sms_dataset/full_dataset.csv` với các cột `message_id,message,label`, rồi chạy từ gốc repo:
+Nguồn được lưu tại `backend/data/raw/vietnamese_sms_dataset/full_dataset.csv` với các cột `message_id,message,label`. Để tạo lại dữ liệu xử lý, chạy từ gốc repo:
 
 ```powershell
 .\.venv\Scripts\python.exe backend/scripts/prepare_data.py --run-tests
@@ -58,11 +58,11 @@ Pipeline giữ nguyên raw, chuẩn hóa NFC/lowercase/khoảng trắng, thay UR
 
 Hai bộ dùng **cùng test từng byte**. DL train + val bằng ML train; DL val là fold 0 của CV. Tỷ lệ thực tế có thể lệch do giữ nhóm gần trùng trong cùng tập. LR/SVM phải dùng bảng fold chung và fit TF-IDF bên trong từng fold.
 
-Dữ liệu sạch và bảng truy vết nằm ở `backend/data/processed/`; hash, cấu hình và versions ở `backend/data/splits/manifest.json`. Mỗi lượt chạy thành công thêm một báo cáo `backend/report/preprocess_vN.md`. Dữ liệu sinh ra được Git ignore, báo cáo chỉ có thống kê. Trạng thái **provisional** cho đến khi nhóm hoàn tất review near-duplicate và outlier; ngưỡng tương đồng không bảo đảm phát hiện hết template leakage.
+Dữ liệu sạch và bảng truy vết nằm ở `backend/data/processed/`; hash, cấu hình và versions ở `backend/data/splits/manifest.json`. Mỗi lượt chạy thành công thêm một báo cáo `backend/report/preprocess_vN.md`. Git lưu bộ nguồn `vietnamese_sms_dataset`, các CSV xử lý và các tập chia ML/DL/JEV cùng manifest; `.gitattributes` giữ nguyên byte để bảo toàn hash. Trạng thái **provisional** cho đến khi nhóm hoàn tất review near-duplicate và outlier; ngưỡng tương đồng không bảo đảm phát hiện hết template leakage.
 
 ## Quy ước
 
 - Dữ liệu nguồn ở `backend/data/raw/`, dữ liệu xử lý ở `processed/`, các tập train/validation/test ở `splits/`.
 - Training nằm trong `backend/src/`; service trong `backend/app/` phục vụ API và load model đã lưu.
-- Không commit secrets, dữ liệu cá nhân, môi trường Python, đầu ra thí nghiệm hoặc model nặng. Git giữ `.gitkeep` và hai file mẫu `data/raw/chp0703/ham.txt`, `scam.txt`.
+- Không commit secrets, dữ liệu cá nhân mới thu thập, môi trường Python, đầu ra thí nghiệm hoặc model nặng. Bộ dữ liệu nguồn công khai được giữ kèm README và `source.json` ghi nguồn, revision và giấy phép do nguồn công bố.
 - Chốt nhãn, cách chia dữ liệu và tiêu chí đánh giá trước khi so sánh model. Giải thích do LLM tạo không tự chứng minh kết quả phân loại là đúng.

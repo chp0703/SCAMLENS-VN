@@ -1,0 +1,2 @@
+# Preserve dataset bytes so SHA-256 values remain valid across platforms.
+backend/data/** -text

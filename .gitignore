@@ -6,12 +6,17 @@
 /ScamLens_VN_Ke_Hoach_8_Tuan_Gon.docx
 /ScamLens_VN_Master_Project_Proposal.pdf
 
-# Keep structure and team input templates; exclude local datasets.
+# Track the shared dataset and preprocessing outputs; exclude other local data.
 !/backend/data/
 /backend/data/**
 !/backend/data/**/
 !/backend/data/**/.gitkeep
 !/backend/data/raw/chp0703/ham.txt
 !/backend/data/raw/chp0703/scam.txt
+!/backend/data/raw/vietnamese_sms_dataset/*
+!/backend/data/processed/*.csv
+!/backend/data/splits/manifest.json
+!/backend/data/splits/ml/*.csv
+!/backend/data/splits/dl_jev/*.csv
 /backend/experiments/**
 !/backend/experiments/.gitkeep
