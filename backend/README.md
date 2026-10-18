@@ -209,6 +209,7 @@ Chốt nhãn và cách chia dữ liệu trước; rà trùng nội dung/template
 
 ## Dữ liệu và Git
 
+- Git lưu nguồn công khai `data/raw/vietnamese_sms_dataset/`, CSV trong `data/processed/`, các tập ML/DL/JEV và `data/splits/manifest.json`. Nguồn và giấy phép được ghi trong README nguồn và `source.json`; `.gitattributes` giữ nguyên byte dữ liệu để bảo toàn SHA-256. Các dữ liệu local khác vẫn được ignore.
 - `experiments/` chỉ giữ `.gitkeep` trong Git. Muốn chia sẻ báo cáo cần thống nhất riêng file nào được commit.
 - Model trong `artifacts/`, secrets, môi trường Python và cache được ignore. Chỉ commit `.env.example`, không commit `.env` thật.
 - File khung và test trống chưa chứng minh hệ thống hoạt động; cần kiểm thử thực tế sau khi triển khai từng phần.

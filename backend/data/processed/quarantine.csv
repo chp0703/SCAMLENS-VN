@@ -1,0 +1,6 @@
+﻿source_row,message_id,text_raw,text,label,reason
+1060,COM_1222,8qbet tai khoan moi tao theo link duoi nhan code [MONEY]. Nap dau nhan [MONEY]. Rut k gioi han [MONEY]! Tai https://dx3389.8qbet16.com,8qbet tai khoan moi tao theo link duoi nhan code [MONEY]. nap dau nhan [MONEY]. rut k gioi han [MONEY]! tai [URL],0,label_conflict_after_masking
+2189,COM_2990,"Thiết bị [NUMBER] đã bị mở khóa. 
+Liên hệ với tài khoản account@ezviz.com nếu có bất kỳ thắc mắc.",thiết bị [NUMBER] đã bị mở khóa. liên hệ với tài khoản [EMAIL] nếu có bất kỳ thắc mắc.,0,label_conflict_before_masking
+2261,COM_072,8qbet tai khoan moi tao theo link duoi nhan code [MONEY]. Nap dau nhan [MONEY]. Rut k gioi han [MONEY]! Tai https://dx1115.868qbet.com,8qbet tai khoan moi tao theo link duoi nhan code [MONEY]. nap dau nhan [MONEY]. rut k gioi han [MONEY]! tai [URL],1,label_conflict_after_masking
+2969,COM_2055,Thiết bị [NUMBER] đã bị mở khóa. Liên hệ với tài khoản account@ezviz.com nếu có bất kỳ thắc mắc.,thiết bị [NUMBER] đã bị mở khóa. liên hệ với tài khoản [EMAIL] nếu có bất kỳ thắc mắc.,1,label_conflict_before_masking
