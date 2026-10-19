@@ -45,7 +45,7 @@ Các resolved version chính xác được ghi trong `package-lock.json`.
 - lint-staged và pre-commit hook chỉ áp dụng trong phạm vi Frontend đã được bổ sung.
 - `.gitignore` đã bao phủ dependencies, build/test output, caches, environment files, TypeScript artifacts, Husky internals và OS/editor files.
 - Tài liệu onboarding, team workflow, Codex constraints, project state và worklog đã được tạo.
-- Sitemap và user-flow proposal cho Home, Scam Analyzer, Chatbot và Scam Academy được ghi trong `docs/SITEMAP_USER_FLOWS.md`; nội dung đang chờ Frontend team review.
+- Sitemap và user-flow proposal cho Home, Scam Analyzer và Scam Academy được ghi trong `docs/SITEMAP_USER_FLOWS.md`; Chatbot đã được bỏ theo review feedback. Proposal vẫn cần team chốt trước khi chuyển sang Figma.
 
 Xem `docs/worklogs/kentlatoi.md` để biết commands và kết quả thực tế của Frontend Foundation.
 
@@ -67,7 +67,6 @@ Xem `docs/worklogs/kentlatoi.md` để biết commands và kết quả thực t�
 - ScamLens Home experience
 - Analyzer input, result và error flows
 - Academy content và navigation
-- Chatbot experience
 - Backend API integration
 - Product routing và navigation architecture
 - Product design system và reusable application components

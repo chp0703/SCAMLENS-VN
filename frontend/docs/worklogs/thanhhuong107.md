@@ -2,11 +2,11 @@
 
 Nhật ký kỹ thuật ngắn gọn của `thanhhuong107`. Chỉ ghi công việc và kết quả đã thực sự thực hiện; entry mới nhất đặt lên trước.
 
-**2026-10-17 — Sitemap & User Flow**
+**2026-10-19 — Revise Sitemap & User Flow**
 
-- Thay đổi: Tạo `docs/SITEMAP_USER_FLOWS.md` với sitemap và các luồng Home, Analyzer, Chatbot, Academy, kèm loading/empty/validation/success/error states và các open decisions.
-- Test: `cd frontend && npm run check` — pass (format, lint, build); không có automated behavior tests cho thay đổi tài liệu này.
-- Tiếp theo: Nhờ Frontend team review scope và open decisions, sau đó chuyển bản được thống nhất sang Figma/FigJam.
+- Thay đổi: Bỏ Chatbot theo review feedback; giữ sitemap và các luồng Home, Analyzer, Academy cùng loading/empty/validation/success/error states và open decisions.
+- Test: `cd frontend && npm run check` — pass (Prettier, ESLint, TypeScript build và Vite production build); không có automated behavior tests cho thay đổi tài liệu này.
+- Tiếp theo: Team chốt scope và open decisions trước khi chuyển bản proposal sang Figma/FigJam.
 
 **YYYY-MM-DD — Tên task**
 
