@@ -3,6 +3,7 @@
 from dataclasses import replace
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -12,7 +13,8 @@ BACKEND = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND))
 
 from src.ML.data_utils import MLData, build_predefined_split
-from src.ML.train_lr import evaluate_baseline, format_baseline_result, run_baseline
+from src.ML.metrics import SCORING as SHARED_SCORING
+from src.ML.train_lr import SCORING, evaluate_baseline, format_baseline_result, run_baseline
 
 
 def synthetic_data() -> MLData:
@@ -58,10 +60,23 @@ class LogisticRegressionBaselineTests(unittest.TestCase):
         data = synthetic_data()
         isolated = replace(data, X_test=[None], y_test=np.asarray([99]))
         with patch("src.ML.train_lr.load_ml_data", return_value=isolated) as loader:
-            result = run_baseline()
+            with tempfile.TemporaryDirectory() as directory:
+                result = run_baseline(report_dir=directory)
         loader.assert_called_once_with(data_dir=None, manifest_path=None)
         self.assertEqual(len(result.fold_ids), 2)
         self.assertEqual(set(result.scores), {"f1_scam", "precision_scam", "recall_scam"})
+
+    def test_baseline_uses_shared_scorers_and_writes_unique_reports(self):
+        self.assertIs(SCORING, SHARED_SCORING)
+        with tempfile.TemporaryDirectory() as directory:
+            run_baseline(report_dir=directory)
+            run_baseline(report_dir=directory)
+            reports = list(Path(directory).glob("*.json"))
+            self.assertEqual(len(reports), 2)
+            payload = __import__("json").loads(reports[0].read_text(encoding="utf-8"))
+            self.assertEqual(payload["status"], "success")
+            self.assertIn("metrics", payload)
+            self.assertTrue((reports[0].with_suffix(".md")).is_file())
 
 
 if __name__ == "__main__":

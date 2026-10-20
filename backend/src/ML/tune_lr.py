@@ -9,40 +9,29 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass, replace
-import hashlib
 import json
 from pathlib import Path
-import platform
 import sys
+import tempfile
+import time
 import warnings
 
 import joblib
 import numpy as np
-import sklearn
-from sklearn.metrics import f1_score, make_scorer, precision_score, recall_score
 from sklearn.model_selection import GridSearchCV, ParameterGrid
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.ML.data_utils import MLData, load_ml_data
+from src.ML.experiment_reporting import new_run_context, source_fingerprints, versions, write_report
+from src.ML.metrics import METRIC_LABELS, METRICS, SCORER_DEFINITIONS, SCORING
 from src.ML.models.logistic_regression import build_lr_pipeline
 
 
 PARAM_GRID = {
     "model__C": [0.01, 0.1, 1, 10, 100],
     "model__class_weight": [None, "balanced"],
-}
-SCORING = {
-    "f1_scam": make_scorer(f1_score, pos_label=1, zero_division=0),
-    "precision_scam": make_scorer(precision_score, pos_label=1, zero_division=0),
-    "recall_scam": make_scorer(recall_score, pos_label=1, zero_division=0),
-}
-METRICS = ("f1_scam", "precision_scam", "recall_scam")
-METRIC_LABELS = {
-    "f1_scam": "F1 (Scam, pos_label=1)",
-    "precision_scam": "Precision (Scam, pos_label=1)",
-    "recall_scam": "Recall (Scam, pos_label=1)",
 }
 
 
@@ -83,21 +72,6 @@ def _default_artifact_dir() -> Path:
 
 def _default_data_dir() -> Path:
     return Path(__file__).resolve().parents[2] / "data" / "splits" / "ml"
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _source_fingerprints(data_dir: str | Path | None) -> dict[str, str]:
-    """Fingerprint only shared split artifacts, never message content."""
-    directory = (Path(data_dir) if data_dir is not None else _default_data_dir()).resolve()
-    result = {}
-    for filename in ("train.csv", "cv_folds.csv"):
-        path = directory / filename
-        if path.is_file():
-            result[filename] = _sha256(path)
-    return result
 
 
 def tune_data(data: MLData) -> TuningResult:
@@ -149,26 +123,31 @@ def save_best_artifact(
     data: MLData,
     artifact_dir: str | Path | None = None,
     source_fingerprints: dict[str, str] | None = None,
+    run_id: str | None = None,
+    report_paths: dict[str, str] | None = None,
 ) -> ArtifactResult:
     """Persist the refitted best estimator plus safe, reproducible metadata."""
     directory = (Path(artifact_dir) if artifact_dir is not None else _default_artifact_dir()).resolve()
     directory.mkdir(parents=True, exist_ok=True)
     model_path = directory / "model.joblib"
     metadata_path = directory / "metadata.json"
-    joblib.dump(result.best_estimator, model_path)
-
-    reloaded_model = joblib.load(model_path)
+    # Stage both files then atomically replace their current versions only after
+    # serialization and the reload smoke check succeed.
+    with tempfile.NamedTemporaryFile(dir=directory, suffix=".joblib", delete=False) as stream:
+        staged_model = Path(stream.name)
+    try:
+        joblib.dump(result.best_estimator, staged_model)
+        reloaded_model = joblib.load(staged_model)
+    except Exception:
+        staged_model.unlink(missing_ok=True)
+        raise
     smoke_predictions = tuple(int(value) for value in reloaded_model.predict(["xin chao", "nhan thuong gap"]))
     metadata = {
         "model_name": "Logistic Regression TF-IDF Pipeline",
         "pipeline_components": list(result.best_estimator.named_steps),
         "best_hyperparameters": result.best_params,
         "selection_metric": "f1_scam",
-        "scoring": {
-            "f1_scam": "f1_score(pos_label=1, zero_division=0)",
-            "precision_scam": "precision_score(pos_label=1, zero_division=0)",
-            "recall_scam": "recall_score(pos_label=1, zero_division=0)",
-        },
+        "scoring": SCORER_DEFINITIONS,
         "parameter_grid": PARAM_GRID,
         "selected_cv_metrics": {
             metric: {
@@ -187,10 +166,22 @@ def save_best_artifact(
             "shared_fold_assignments": True,
         },
         "label_mapping": {"0": "Ham", "1": "Scam"},
-        "versions": {"python": platform.python_version(), "scikit_learn": sklearn.__version__},
+        "versions": versions(),
         "source_sha256": source_fingerprints or {},
+        "run_id": run_id,
+        "report_paths": report_paths or {},
     }
-    metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with tempfile.NamedTemporaryFile(dir=directory, suffix=".json", delete=False, mode="w", encoding="utf-8") as stream:
+        json.dump(metadata, stream, ensure_ascii=False, indent=2, sort_keys=True)
+        stream.write("\n")
+        staged_metadata = Path(stream.name)
+    try:
+        staged_model.replace(model_path)
+        staged_metadata.replace(metadata_path)
+    except Exception:
+        staged_model.unlink(missing_ok=True)
+        staged_metadata.unlink(missing_ok=True)
+        raise
     return ArtifactResult(model_path, metadata_path, smoke_predictions)
 
 
@@ -199,14 +190,29 @@ def run_tuning(
     manifest_path: str | Path | None = None,
     artifact_dir: str | Path | None = None,
     save_artifact: bool = True,
+    report_dir: str | Path | None = None,
 ) -> TuningResult:
-    """Load data, tune using shared CV, and optionally save the refitted model."""
-    data = load_ml_data(data_dir=data_dir, manifest_path=manifest_path)
-    result = tune_data(data)
-    if not save_artifact:
+    """Load, tune, save the selected artifact, and persist a complete report."""
+    context = new_run_context("tuning", report_dir)
+    started = time.perf_counter()
+    try:
+        data = load_ml_data(data_dir=data_dir, manifest_path=manifest_path)
+        result = tune_data(data)
+        report_paths = {
+            "markdown": f"backend/experiments/logistic_regression/runs/{context['run_id']}.md",
+            "json": f"backend/experiments/logistic_regression/runs/{context['run_id']}.json",
+        }
+        if save_artifact:
+            artifact = save_best_artifact(result, data, artifact_dir, source_fingerprints(data_dir, _default_data_dir()), context["run_id"], report_paths)
+            result = replace(result, artifact=artifact)
+        candidates = []
+        for index, params in enumerate(result.search.cv_results_["params"]):
+            candidates.append({"index": index, "params": params, "metrics": {metric: {"per_fold": [float(result.search.cv_results_[f"split{fold}_test_{metric}"][index]) for fold in result.fold_ids], "mean": float(result.search.cv_results_[f"mean_test_{metric}"][index]), "population_std": float(result.search.cv_results_[f"std_test_{metric}"][index])} for metric in METRICS}})
+        write_report(context, {"status": "success", "elapsed_seconds": time.perf_counter() - started, "source_sha256": source_fingerprints(data_dir, _default_data_dir()), "training_samples": len(data.X_train), "cv_fold_ids": list(result.fold_ids), "cv_type": "PredefinedSplit", "parameter_grid": PARAM_GRID, "scoring": SCORER_DEFINITIONS, "selection_metric": "f1_scam", "candidate_count": result.candidate_count, "cv_fit_count": result.cv_fit_count, "candidates": candidates, "best_parameters": result.best_params, "selected_cv_metrics": {metric: {"per_fold": list(result.per_fold_scores[metric]), "mean": result.means[metric], "population_std": result.standard_deviations[metric]} for metric in METRICS}, "warnings": list(result.warnings), "versions": versions(), "random_seed": "not applicable (default LogisticRegression configuration)", "model_configuration": {"tfidf": build_lr_pipeline().named_steps["tfidf"].get_params(), "logistic_regression": build_lr_pipeline().named_steps["model"].get_params()}, "artifact": {"model_path": str(result.artifact.model_path), "metadata_path": str(result.artifact.metadata_path), "smoke_predictions": list(result.artifact.smoke_predictions)} if result.artifact else None})
         return result
-    artifact = save_best_artifact(result, data, artifact_dir, _source_fingerprints(data_dir))
-    return replace(result, artifact=artifact)
+    except Exception as exc:
+        write_report(context, {"status": "failure", "elapsed_seconds": time.perf_counter() - started, "error": f"{type(exc).__name__}: {exc}", "versions": versions()})
+        raise
 
 
 def format_tuning_result(result: TuningResult) -> str:

@@ -1,6 +1,7 @@
 """Synthetic unit tests for ML shared-split loading and validation."""
 
 import csv
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -15,7 +16,8 @@ from src.ML.data_utils import DataValidationError, load_ml_data
 class MLDataUtilsTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.data_dir = Path(self.temp.name)
+        self.data_dir = Path(self.temp.name) / "ml"
+        self.data_dir.mkdir()
         self.train = [
             ["t2", "raw", "second", 1, "g2"], ["t1", "raw", "first", 0, "g1"],
             ["t3", "raw", "third", 0, "g3"], ["t4", "raw", "fourth", 1, "g4"],
@@ -103,6 +105,14 @@ class MLDataUtilsTests(unittest.TestCase):
         self._write_valid()
         with self.assertRaisesRegex(DataValidationError, "contiguous range"):
             load_ml_data(self.data_dir)
+
+    def test_manifest_n_splits_valid_and_invalid_values_are_validated(self):
+        manifest = self.data_dir / "manifest.json"
+        manifest.write_text(json.dumps({"split": {"n_splits": 2}}), encoding="utf-8")
+        self.assertEqual(len(list(load_ml_data(self.data_dir, manifest).cv.split())), 2)
+        manifest.write_text(json.dumps({"split": {"n_splits": None}}), encoding="utf-8")
+        with self.assertRaisesRegex(DataValidationError, "must be an integer"):
+            load_ml_data(self.data_dir, manifest)
 
 
 if __name__ == "__main__":

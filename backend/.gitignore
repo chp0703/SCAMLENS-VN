@@ -8,3 +8,11 @@ __pycache__/
 venv/
 artifacts/*
 !artifacts/.gitkeep
+!artifacts/logistic_regression/
+!artifacts/logistic_regression/model.joblib
+!artifacts/logistic_regression/metadata.json
+experiments/*
+!experiments/logistic_regression/
+!experiments/logistic_regression/runs/
+!experiments/logistic_regression/runs/*.md
+!experiments/logistic_regression/runs/*.json

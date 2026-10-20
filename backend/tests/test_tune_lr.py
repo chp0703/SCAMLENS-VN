@@ -15,7 +15,8 @@ BACKEND = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND))
 
 from src.ML.data_utils import MLData, build_predefined_split
-from src.ML.tune_lr import PARAM_GRID, save_best_artifact, run_tuning, tune_data
+from src.ML.metrics import SCORING as SHARED_SCORING
+from src.ML.tune_lr import PARAM_GRID, SCORING, save_best_artifact, run_tuning, tune_data
 
 
 def synthetic_data() -> MLData:
@@ -52,7 +53,8 @@ class LogisticRegressionTuningTests(unittest.TestCase):
         data = synthetic_data()
         isolated = replace(data, X_test=[None], y_test=np.asarray([99]))
         with patch("src.ML.tune_lr.load_ml_data", return_value=isolated) as loader:
-            result = run_tuning(save_artifact=False)
+            with tempfile.TemporaryDirectory() as directory:
+                result = run_tuning(save_artifact=False, report_dir=directory)
         loader.assert_called_once_with(data_dir=None, manifest_path=None)
         self.assertEqual(result.candidate_count, 10)
 
@@ -60,7 +62,7 @@ class LogisticRegressionTuningTests(unittest.TestCase):
         data = synthetic_data()
         result = tune_data(data)
         with tempfile.TemporaryDirectory() as directory:
-            artifact = save_best_artifact(result, data, directory, {"train.csv": "abc", "cv_folds.csv": "def"})
+            artifact = save_best_artifact(result, data, directory, {"train.csv": "abc", "cv_folds.csv": "def"}, "run-123", {"json": "report.json"})
             self.assertTrue(artifact.model_path.is_file())
             self.assertTrue(artifact.metadata_path.is_file())
             self.assertEqual(len(artifact.smoke_predictions), 2)
@@ -68,7 +70,27 @@ class LogisticRegressionTuningTests(unittest.TestCase):
             metadata = json.loads(artifact.metadata_path.read_text(encoding="utf-8"))
             self.assertEqual(metadata["selection_metric"], "f1_scam")
             self.assertEqual(metadata["source_sha256"]["train.csv"], "abc")
+            self.assertEqual(metadata["run_id"], "run-123")
+            self.assertEqual(metadata["report_paths"]["json"], "report.json")
             self.assertNotIn("unused test message", artifact.metadata_path.read_text(encoding="utf-8"))
+
+    def test_tuning_report_contains_all_cv_candidates_and_shared_scorers(self):
+        self.assertIs(SCORING, SHARED_SCORING)
+        with tempfile.TemporaryDirectory() as directory:
+            run_tuning(save_artifact=False, report_dir=directory)
+            payload = json.loads(next(Path(directory).glob("*.json")).read_text(encoding="utf-8"))
+            self.assertEqual(payload["status"], "success")
+            self.assertEqual(len(payload["candidates"]), 10)
+            self.assertEqual(payload["selection_metric"], "f1_scam")
+
+    def test_failed_tuning_writes_failure_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("src.ML.tune_lr.load_ml_data", side_effect=RuntimeError("unavailable")):
+                with self.assertRaisesRegex(RuntimeError, "unavailable"):
+                    run_tuning(report_dir=directory)
+            payload = json.loads(next(Path(directory).glob("*.json")).read_text(encoding="utf-8"))
+            self.assertEqual(payload["status"], "failure")
+            self.assertNotIn("selected_cv_metrics", payload)
 
     def test_fit_failure_propagates_clearly(self):
         data = synthetic_data()

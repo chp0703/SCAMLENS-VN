@@ -10,30 +10,20 @@ import argparse
 from dataclasses import dataclass
 from pathlib import Path
 import sys
+import time
 import warnings
 
 import numpy as np
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.metrics import f1_score, make_scorer, precision_score, recall_score
 from sklearn.model_selection import cross_validate
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.ML.data_utils import MLData, load_ml_data
+from src.ML.experiment_reporting import new_run_context, source_fingerprints, versions, write_report
+from src.ML.metrics import METRIC_LABELS, SCORING
 from src.ML.models.logistic_regression import build_lr_pipeline
-
-
-SCORING = {
-    "f1_scam": make_scorer(f1_score, pos_label=1, zero_division=0),
-    "precision_scam": make_scorer(precision_score, pos_label=1, zero_division=0),
-    "recall_scam": make_scorer(recall_score, pos_label=1, zero_division=0),
-}
-METRIC_LABELS = {
-    "f1_scam": "F1 (Scam, pos_label=1)",
-    "precision_scam": "Precision (Scam, pos_label=1)",
-    "recall_scam": "Recall (Scam, pos_label=1)",
-}
 
 
 @dataclass(frozen=True)
@@ -91,9 +81,35 @@ def evaluate_baseline(data: MLData) -> BaselineResult:
 def run_baseline(
     data_dir: str | Path | None = None,
     manifest_path: str | Path | None = None,
+    report_dir: str | Path | None = None,
 ) -> BaselineResult:
-    """Load validated shared data and evaluate the fixed default LR baseline."""
-    return evaluate_baseline(load_ml_data(data_dir=data_dir, manifest_path=manifest_path))
+    """Load, evaluate, and persist a provenance-only baseline report."""
+    context = new_run_context("baseline", report_dir)
+    started = time.perf_counter()
+    try:
+        data = load_ml_data(data_dir=data_dir, manifest_path=manifest_path)
+        result = evaluate_baseline(data)
+        payload = {
+            "status": "success", "elapsed_seconds": time.perf_counter() - started,
+            "source_sha256": source_fingerprints(data_dir, _default_data_dir()),
+            "training_samples": len(data.X_train), "cv_fold_ids": list(result.fold_ids),
+            "cv_type": "PredefinedSplit", "scoring": {key: METRIC_LABELS[key] for key in SCORING},
+            "metrics": {metric: {"per_fold": list(result.scores[metric]), "mean": result.means[metric], "population_std": result.standard_deviations[metric]} for metric in SCORING},
+            "warnings": list(result.warnings), "versions": versions(), "random_seed": "not applicable (default LogisticRegression configuration)",
+            "model_configuration": {
+                "tfidf": build_lr_pipeline().named_steps["tfidf"].get_params(),
+                "logistic_regression": build_lr_pipeline().named_steps["model"].get_params(),
+            },
+        }
+        write_report(context, payload)
+        return result
+    except Exception as exc:
+        write_report(context, {"status": "failure", "elapsed_seconds": time.perf_counter() - started, "error": f"{type(exc).__name__}: {exc}", "versions": versions()})
+        raise
+
+
+def _default_data_dir() -> Path:
+    return Path(__file__).resolve().parents[2] / "data" / "splits" / "ml"
 
 
 def format_baseline_result(result: BaselineResult) -> str:
