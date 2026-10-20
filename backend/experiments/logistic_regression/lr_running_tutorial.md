@@ -22,8 +22,12 @@ Run these commands from the repository root (`SCAMLENS-VN`) in PowerShell.
 
 A successful tuning run saves the best pipeline and metadata to:
 
-- `backend/artifacts/logistic_regression/model.joblib`
-- `backend/artifacts/logistic_regression/metadata.json`
+- `backend/artifacts/logistic_regression/runs/<run_id>/model.joblib`
+- `backend/artifacts/logistic_regression/runs/<run_id>/metadata.json`
+
+`backend/artifacts/logistic_regression/current.json` atomically selects the complete version to use. Existing root-level artifacts are retained as legacy files and are not overwritten. Load the active version using `src.ML.artifacts.load_artifact()` from a Python session started in `backend/`.
+
+Both baseline and tuning read `backend/src/ML/configs/lr.yaml`. Override it with `--config PATH`; override the report destination with `--report-dir PATH`. The YAML controls TF-IDF/model parameters, the tuning grid, and `evaluation.primary_metric`.
 
 Each run writes Markdown and JSON reports under:
 

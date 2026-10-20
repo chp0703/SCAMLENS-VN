@@ -15,7 +15,7 @@ def build_svm_pipeline(
 ) -> Pipeline:
     """Build an unfitted TF-IDF + LinearSVC pipeline."""
     vectorizer = TfidfVectorizer(**dict(tfidf_params or {}))
-    classifier = LinearSVC(**dict(model_params or {}))
+    classifier = LinearSVC(**{"random_state": 42, **dict(model_params or {})})
 
     return Pipeline([
         ("tfidf", vectorizer),

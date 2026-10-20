@@ -1,5 +1,9 @@
 model:
   type: LinearSVC
+  params:
+    random_state: 42
+
+tfidf: {}
 
 tuning:
   model__C: [0.01, 0.1, 1, 10, 100]

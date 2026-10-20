@@ -8,8 +8,8 @@ Backend gồm ứng dụng FastAPI, công cụ chuẩn bị dữ liệu, các h�
 
 - FastAPI app, endpoint và model inference chưa triển khai; service preprocessing đã có hàm dùng chung với pipeline offline.
 - `scripts/build_dataset.py` và `scripts/merge_team.py` có logic từ `build_dataset/` cũ, được chuyển nguyên nội dung.
-- `scripts/prepare_data.py` và `scripts/split_data.py` đã triển khai và có kiểm thử trong `tests/test_preprocessing.py`. Module trong `src/` và `evaluation/` vẫn là khung.
-- `lr.yaml` và `svm.yaml` là cấu hình rỗng (`{}`); chưa có hyperparameter mặc định hay loader YAML.
+- `scripts/prepare_data.py` và `scripts/split_data.py` đã triển khai và có kiểm thử trong `tests/test_preprocessing.py`. LR/SVM đã có baseline, tuning và lưu artifact; DL/JEV và `evaluation/` vẫn là khung.
+- `src/ML/config.py` đọc và kiểm tra `lr.yaml`/`svm.yaml`; cấu hình TF-IDF, estimator, search grid và metric chọn model được dùng chung cho train/tune.
 - `JEV/` là tên khu vực theo thiết kế; chưa chốt thư viện, giao thức hoặc tiêu chí tích hợp. Chưa có kết nối JEV thật.
 
 ## Cấu trúc thư mục
@@ -38,6 +38,12 @@ backend/
 │   │   │   └── svm.py
 │   │   ├── train_lr.py
 │   │   ├── train_svm.py
+│   │   ├── tune_lr.py
+│   │   ├── tune_svm.py
+│   │   ├── config.py
+│   │   ├── cv.py
+│   │   ├── artifacts.py
+│   │   ├── experiment_reporting.py
 │   │   └── configs/
 │   │       ├── lr.yaml
 │   │       └── svm.yaml
@@ -106,6 +112,35 @@ python -m venv .venv
 ```
 
 Dependencies gồm FastAPI, Uvicorn và `scikit-learn==1.7.2` cho grouped splits. Bổ sung dependencies training DL/JEV khi triển khai. `.env.example` là mẫu biến môi trường; module cấu hình chưa đọc các biến này.
+
+### Chạy LR/SVM
+
+Từ gốc repo, dùng Python của môi trường đã cài `backend/requirements.txt` (bao gồm PyYAML):
+
+```powershell
+.\.venv-preprocessing\Scripts\python.exe backend/src/ML/train_lr.py
+.\.venv-preprocessing\Scripts\python.exe backend/src/ML/tune_lr.py
+.\.venv-preprocessing\Scripts\python.exe backend/src/ML/train_svm.py
+.\.venv-preprocessing\Scripts\python.exe backend/src/ML/tune_svm.py
+```
+
+Cả bốn lệnh hỗ trợ `--config PATH`, `--data-dir PATH`, `--manifest PATH` và `--report-dir PATH`. Hai lệnh tuning còn hỗ trợ `--artifact-dir PATH` và `--no-save-artifact`. `evaluation.primary_metric` trong YAML quyết định metric refit; mặc định là `f1_scam`. Seed được truyền vào estimator và báo cáo ghi seed thực tế.
+
+`cv.py` dùng cùng `PredefinedSplit` và scoring cho hai model; TF-IDF được fit trong từng fold. `test.csv` chỉ được loader kiểm tra tính hợp lệ, không được dùng để fit hoặc chọn hyperparameter.
+
+### Artifact theo phiên bản
+
+Sau tuning, mỗi model được lưu dưới `artifacts/<model>/runs/<run_id>/` gồm `model.joblib` và `metadata.json`. Chỉ sau khi serialize, reload và kiểm tra dự đoán thành công, `current.json` mới được thay bằng một thao tác atomic để chọn cặp mới. Nếu cập nhật pointer thất bại, cặp hoàn chỉnh chưa được chọn có thể còn trong `runs/`; phiên bản đang dùng vẫn giữ nguyên.
+
+Load phiên bản đang chọn bằng helper dùng chung, chạy Python từ `backend/`:
+
+```python
+from src.ML.artifacts import load_artifact
+
+pipeline, metadata = load_artifact("artifacts/logistic_regression")
+```
+
+Đổi đường dẫn thành `artifacts/svm` cho SVM. Helper kiểm tra hash của cặp được chọn trước khi load. Artifact cũ dạng hai file ngay dưới `artifacts/<model>/` vẫn đọc được khi chưa có `current.json`; các lần tuning mới không ghi đè hai file cũ này. Vì vậy, dùng `load_artifact()` thay cho việc load cứng file legacy ở thư mục gốc.
 
 Lệnh `uvicorn app.main:app --reload` từ `backend/` chỉ dùng được **sau khi** triển khai đối tượng `app` và routes. Hiện chưa có endpoint `/predict` hay API contract đã chốt.
 
