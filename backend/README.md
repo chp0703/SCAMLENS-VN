@@ -156,7 +156,11 @@ Chạy từ gốc repo sau khi cài requirements:
 .\.venv\Scripts\python.exe backend/scripts/prepare_data.py --run-tests
 ```
 
-Hoặc từ `backend/`: `..\.venv\Scripts\python.exe scripts/prepare_data.py --run-tests`. Đường dẫn mặc định được tính theo vị trí script, không phụ thuộc thư mục hiện tại. Có thể thay bằng Python từ môi trường đang dùng. Lượt triển khai này dùng `.venv-preprocessing` riêng vì `.venv` cũ không khởi động được.
+Hoặc từ thư mục `backend/`:
+
+```powershell
+..\.venv\Scripts\python.exe scripts/prepare_data.py --run-tests
+```
 
 Các tùy chọn: `--source PATH`, `--data-dir PATH`, `--report-dir PATH`, `--seed 42`, `--similarity-threshold 0.85`. Đổi nguồn/quy tắc/seed phải tạo lại cả hai bộ split, thông báo cho mọi người dùng dữ liệu và giữ báo cáo mới. Test nguồn cũ không được gộp thêm vào nguồn vì đã nằm trong `full_dataset.csv`.
 

@@ -1,10 +1,18 @@
 
 """Unit tests for the ScamLens Linear SVM pipeline."""
 
+import sys
 import unittest
+from pathlib import Path
 
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
+
+# Allow imports from backend/src when tests run from repository root.
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 from src.ML.models.svm import build_svm_pipeline
 from src.ML.tune_svm import load_param_grid
