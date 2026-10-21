@@ -142,6 +142,27 @@ pipeline, metadata = load_artifact("artifacts/logistic_regression")
 
 Đổi đường dẫn thành `artifacts/svm` cho SVM. Helper kiểm tra hash của cặp được chọn trước khi load. Artifact cũ dạng hai file ngay dưới `artifacts/<model>/` vẫn đọc được khi chưa có `current.json`; các lần tuning mới không ghi đè hai file cũ này. Vì vậy, dùng `load_artifact()` thay cho việc load cứng file legacy ở thư mục gốc.
 
+### Final benchmark LR/SVM
+
+`backend/evaluation/` cung cấp metrics dùng chung, percentile bootstrap CI và benchmark held-out test. Benchmark không train, tune, fit lại TF-IDF hoặc chọn threshold. Final test chỉ chạy khi có xác nhận protocol của Leader:
+
+```powershell
+..\\.venv\\Scripts\\python.exe -m evaluation.benchmark `
+  --confirm-final-test `
+  --data-dir data/splits/ml `
+  --manifest data/splits/manifest.json `
+  --lr-artifact-dir artifacts/logistic_regression `
+  --svm-artifact-dir artifacts/svm `
+  --report-dir experiments/benchmark `
+  --bootstrap-replicates 2000 `
+  --confidence-level 0.95 `
+  --seed 42
+```
+
+Chạy lệnh từ thư mục `backend/`. Kết quả gồm JSON và Markdown trong `experiments/benchmark/`; bảng chính hiển thị Accuracy, Precision/Recall/F1 của lớp Scam (`pos_label=1`) và CI của F1. Confusion matrix dùng thứ tự `TN, FP, FN, TP`; paired bootstrap định nghĩa chênh lệch là `Logistic Regression - Support Vector Machine` và dùng cùng index mẫu cho hai model. Bootstrap sample thiếu một lớp vẫn được giữ lại và tính với `zero_division=0`.
+
+CV trên `ml/train.csv`/`cv_folds.csv` là kết quả development dùng cho tuning; không được trộn với final test trên `ml/test.csv`. Nếu thiếu artifact SVM hoặc chưa có Leader approval, benchmark phải dừng và chưa được báo cáo bảng so sánh chính thức.
+
 Lệnh `uvicorn app.main:app --reload` từ `backend/` chỉ dùng được **sau khi** triển khai đối tượng `app` và routes. Hiện chưa có endpoint `/predict` hay API contract đã chốt.
 
 ## Script dữ liệu hiện có
