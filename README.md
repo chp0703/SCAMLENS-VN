@@ -5,7 +5,7 @@ ScamLens VN hướng tới công cụ phân tích văn bản người dùng nh�
 ## Trạng thái
 
 - `frontend/`: React + TypeScript dùng Vite. Xem [README frontend](frontend/README.md).
-- `backend/`: pipeline preprocessing dùng chung cho ML/DL/JEV và khung FastAPI. API, training, model inference và benchmark chưa triển khai.
+- `backend/`: đã có preprocessing, training/tuning LR/SVM, inference từ artifact được ghim và final benchmark. Hai pipeline dùng chung được lưu qua Git LFS. API và training DL/JEV chưa triển khai.
 - Hai script `build_dataset.py` và `merge_team.py` đã có logic tạo/gộp CSV. Cấu trúc thư mục chưa chứng minh hệ thống chạy hoàn chỉnh.
 
 ## Cấu trúc
@@ -41,6 +41,26 @@ Dependencies gồm FastAPI, Uvicorn và scikit-learn cho grouped splits. Chưa c
 
 Xem [README backend](backend/README.md) để biết cấu trúc, hướng dẫn training với fold chung và các phần cần triển khai.
 
+## Dùng chung model LR/SVM qua Git LFS
+
+Mỗi thành viên cần cài Git LFS, checkout cùng nhánh/commit đã chốt và dùng Python 3.12.x. Kích hoạt môi trường Python rồi cài đúng dependencies của model, chạy từ thư mục gốc repo:
+
+```powershell
+python -m pip install -r backend/requirements-models.lock.txt
+```
+
+Sau khi clone hoặc pull, tải model và kiểm tra bằng đủ ba lệnh:
+
+```powershell
+git lfs install --local
+git lfs pull
+python backend/scripts/verify_models.py
+```
+
+Kết quả phải báo `status: PASS`, bundle `ml-evaluated-20261022-v1` và 6 cases cho mỗi model. Lệnh kiểm tra hash model/metadata, môi trường, preprocessing và dự đoán mẫu; không train lại hoặc mở tập test.
+
+Phiên bản dùng chung được ghim trong [models.lock.json](backend/models.lock.json). Xem [hướng dẫn cài môi trường, inference và rule cập nhật model](backend/docs/SHARED_MODELS.md) trước khi thay artifact. Chỉ dùng `python` trong các lệnh trên khi nó trỏ đúng môi trường đã cài dependencies theo lock.
+
 ## Preprocessing
 
 Nguồn được lưu tại `backend/data/raw/vietnamese_sms_dataset/full_dataset.csv` với các cột `message_id,message,label`. Để tạo lại dữ liệu xử lý, chạy từ gốc repo:
@@ -64,5 +84,5 @@ Dữ liệu sạch và bảng truy vết nằm ở `backend/data/processed/`; ha
 
 - Dữ liệu nguồn ở `backend/data/raw/`, dữ liệu xử lý ở `processed/`, các tập train/validation/test ở `splits/`.
 - Training nằm trong `backend/src/`; service trong `backend/app/` phục vụ API và load model đã lưu.
-- Không commit secrets, dữ liệu cá nhân mới thu thập, môi trường Python, đầu ra thí nghiệm hoặc model nặng. Bộ dữ liệu nguồn công khai được giữ kèm README và `source.json` ghi nguồn, revision và giấy phép do nguồn công bố.
+- Model dùng chung đã được duyệt được lưu theo version qua Git LFS; metadata, lock và báo cáo được lưu trong Git thường. Không commit secrets, dữ liệu cá nhân mới thu thập, môi trường Python hoặc các output training/checkpoint chưa được chọn. Bộ dữ liệu nguồn công khai được giữ kèm README và `source.json` ghi nguồn, revision và giấy phép do nguồn công bố.
 - Chốt nhãn, cách chia dữ liệu và tiêu chí đánh giá trước khi so sánh model. Giải thích do LLM tạo không tự chứng minh kết quả phân loại là đúng.
