@@ -16,6 +16,7 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from src.ML.artifacts import load_artifact
+from src.ML.approved_models import load_approved_artifact
 from src.ML.data_utils import load_ml_data
 
 from evaluation.bootstrap import (
@@ -30,8 +31,6 @@ from evaluation.metrics import METRIC_NAMES, EvaluationMetrics, score_prediction
 
 DEFAULT_DATA_DIR = BACKEND_DIR / "data" / "splits" / "ml"
 DEFAULT_MANIFEST = BACKEND_DIR / "data" / "splits" / "manifest.json"
-DEFAULT_LR_ARTIFACT_DIR = BACKEND_DIR / "artifacts" / "logistic_regression"
-DEFAULT_SVM_ARTIFACT_DIR = BACKEND_DIR / "artifacts" / "svm"
 DEFAULT_REPORT_DIR = BACKEND_DIR / "experiments" / "benchmark"
 
 
@@ -134,8 +133,8 @@ def run_benchmark(
     *,
     data_dir: str | Path = DEFAULT_DATA_DIR,
     manifest_path: str | Path = DEFAULT_MANIFEST,
-    lr_artifact_dir: str | Path = DEFAULT_LR_ARTIFACT_DIR,
-    svm_artifact_dir: str | Path = DEFAULT_SVM_ARTIFACT_DIR,
+    lr_artifact_dir: str | Path | None = None,
+    svm_artifact_dir: str | Path | None = None,
     report_dir: str | Path = DEFAULT_REPORT_DIR,
     n_bootstrap: int = DEFAULT_BOOTSTRAP_REPLICATES,
     confidence_level: float = DEFAULT_CONFIDENCE_LEVEL,
@@ -146,11 +145,17 @@ def run_benchmark(
         raise PermissionError("Final test is locked; pass --confirm-final-test after leader approval")
     data_dir = Path(data_dir)
     manifest_path = Path(manifest_path)
-    lr_artifact_dir = Path(lr_artifact_dir)
-    svm_artifact_dir = Path(svm_artifact_dir)
+    if (lr_artifact_dir is None) != (svm_artifact_dir is None):
+        raise ValueError("Provide both explicit artifact directories or use both pinned shared models")
     data = load_ml_data(data_dir=data_dir, manifest_path=manifest_path)
-    lr_model, lr_metadata = load_artifact(lr_artifact_dir)
-    svm_model, svm_metadata = load_artifact(svm_artifact_dir)
+    if lr_artifact_dir is None:
+        lr_model, lr_metadata = load_approved_artifact("logistic_regression")
+        svm_model, svm_metadata = load_approved_artifact("svm")
+        artifact_source = "models.lock.json"
+    else:
+        lr_model, lr_metadata = load_artifact(Path(lr_artifact_dir))
+        svm_model, svm_metadata = load_artifact(Path(svm_artifact_dir))
+        artifact_source = "explicit_directories"
     lr_predictions = lr_model.predict(data.X_test)
     svm_predictions = svm_model.predict(data.X_test)
     lr_result = score_predictions(data.y_test, lr_predictions)
@@ -164,6 +169,7 @@ def run_benchmark(
         "run_id": run_id,
         "run_type": "final_benchmark",
         "final_test_confirmed": True,
+        "artifact_source": artifact_source,
         "test": {
             "data_dir": str(data_dir.resolve()),
             "manifest": str(manifest_path.resolve()),
@@ -189,8 +195,8 @@ def main(argv=None) -> int:
     parser.add_argument("--confirm-final-test", action="store_true")
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
-    parser.add_argument("--lr-artifact-dir", type=Path, default=DEFAULT_LR_ARTIFACT_DIR)
-    parser.add_argument("--svm-artifact-dir", type=Path, default=DEFAULT_SVM_ARTIFACT_DIR)
+    parser.add_argument("--lr-artifact-dir", type=Path, help="Local experiment override; requires --svm-artifact-dir")
+    parser.add_argument("--svm-artifact-dir", type=Path, help="Local experiment override; requires --lr-artifact-dir")
     parser.add_argument("--report-dir", type=Path, default=DEFAULT_REPORT_DIR)
     parser.add_argument("--bootstrap-replicates", type=int, default=DEFAULT_BOOTSTRAP_REPLICATES)
     parser.add_argument("--confidence-level", type=float, default=DEFAULT_CONFIDENCE_LEVEL)

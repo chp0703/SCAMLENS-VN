@@ -105,7 +105,7 @@ class BenchmarkTests(unittest.TestCase):
         svm = FakeModel([0, 1, 0, 1])
         with tempfile.TemporaryDirectory() as directory:
             with patch("evaluation.benchmark.load_ml_data", return_value=data), patch(
-                "evaluation.benchmark.load_artifact",
+                "evaluation.benchmark.load_approved_artifact",
                 side_effect=[(lr, {"run_id": "lr"}), (svm, {"run_id": "svm"})],
             ):
                 payload = run_benchmark(
@@ -119,8 +119,31 @@ class BenchmarkTests(unittest.TestCase):
             self.assertIs(svm.received, data.X_test)
             self.assertEqual(payload["test"]["sample_count"], 4)
             self.assertEqual(payload["bootstrap"]["replicates"], 20)
+            self.assertEqual(payload["artifact_source"], "models.lock.json")
             self.assertTrue(Path(payload["report_paths"]["json"]).is_file())
             self.assertTrue(Path(payload["report_paths"]["markdown"]).is_file())
+
+    def test_mixing_local_and_shared_models_is_rejected_before_loading_data(self):
+        with patch("evaluation.benchmark.load_ml_data") as loader:
+            with self.assertRaisesRegex(ValueError, "both"):
+                run_benchmark(lr_artifact_dir="local-lr", confirm_final_test=True)
+        loader.assert_not_called()
+
+    def test_explicit_local_override_loads_both_directories(self):
+        data = SimpleNamespace(X_test=["ham", "scam"], y_test=[0, 1], test_message_ids=("a", "b"))
+        model = SimpleNamespace(predict=lambda texts: [0, 1])
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("evaluation.benchmark.load_ml_data", return_value=data), patch(
+                "evaluation.benchmark.load_artifact", return_value=(model, {"run_id": "local"})
+            ) as local_loader, patch("evaluation.benchmark.load_approved_artifact") as shared_loader:
+                payload = run_benchmark(
+                    data_dir=directory, manifest_path=Path(directory) / "manifest.json",
+                    lr_artifact_dir="local-lr", svm_artifact_dir="local-svm",
+                    report_dir=directory, n_bootstrap=2, confirm_final_test=True,
+                )
+        self.assertEqual(payload["artifact_source"], "explicit_directories")
+        self.assertEqual([call.args[0] for call in local_loader.call_args_list], [Path("local-lr"), Path("local-svm")])
+        shared_loader.assert_not_called()
 
 
 if __name__ == "__main__":

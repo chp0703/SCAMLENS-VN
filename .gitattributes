@@ -1,2 +1,6 @@
 # Preserve dataset bytes so SHA-256 values remain valid across platforms.
 backend/data/** -text
+
+# Shared fitted pipelines are stored in Git LFS; metadata hashes use exact bytes.
+backend/artifacts/**/*.joblib filter=lfs diff=lfs merge=lfs -text
+backend/artifacts/approved/**/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

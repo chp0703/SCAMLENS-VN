@@ -8,7 +8,7 @@ Backend gồm ứng dụng FastAPI, công cụ chuẩn bị dữ liệu, các h�
 
 - FastAPI app, endpoint và model inference chưa triển khai; service preprocessing đã có hàm dùng chung với pipeline offline.
 - `scripts/build_dataset.py` và `scripts/merge_team.py` có logic từ `build_dataset/` cũ, được chuyển nguyên nội dung.
-- `scripts/prepare_data.py` và `scripts/split_data.py` đã triển khai và có kiểm thử trong `tests/test_preprocessing.py`. LR/SVM đã có baseline, tuning và lưu artifact; DL/JEV và `evaluation/` vẫn là khung.
+- `scripts/prepare_data.py` và `scripts/split_data.py` đã triển khai và có kiểm thử trong `tests/test_preprocessing.py`. LR/SVM đã có baseline, tuning, lưu artifact và final benchmark; DL/JEV vẫn là khung.
 - `src/ML/config.py` đọc và kiểm tra `lr.yaml`/`svm.yaml`; cấu hình TF-IDF, estimator, search grid và metric chọn model được dùng chung cho train/tune.
 - `JEV/` là tên khu vực theo thiết kế; chưa chốt thư viện, giao thức hoặc tiêu chí tích hợp. Chưa có kết nối JEV thật.
 
@@ -128,11 +128,36 @@ Cả bốn lệnh hỗ trợ `--config PATH`, `--data-dir PATH`, `--manifest PAT
 
 `cv.py` dùng cùng `PredefinedSplit` và scoring cho hai model; TF-IDF được fit trong từng fold. `test.csv` chỉ được loader kiểm tra tính hợp lệ, không được dùng để fit hoặc chọn hyperparameter.
 
-### Artifact theo phiên bản
+### Model dùng chung cho team (Git LFS)
+
+Hai pipeline LR/SVM đã benchmark được ghim trong `models.lock.json` và lưu theo run ID trong `artifacts/approved/`; binary được quản lý bằng Git LFS. Dùng cùng commit và cùng lock file để chạy đúng bản model. Quy trình cài môi trường, cập nhật artifact và trách nhiệm review nằm trong [SHARED_MODELS.md](docs/SHARED_MODELS.md).
+
+Sau khi pull, chạy từ gốc repo:
+
+```powershell
+git lfs install --local
+git lfs pull
+.\.venv-preprocessing\Scripts\python.exe -B backend/scripts/verify_models.py
+```
+
+Lệnh kiểm tra hash model/metadata, phiên bản runtime, hash preprocessing và dự đoán trên 6 input tổng hợp cho mỗi model; không mở test set. Môi trường inference được khóa trong `requirements-models.lock.txt` (Python 3.12.x).
+
+Ví dụ inference từ raw text, chạy Python từ `backend/`:
+
+```python
+from src.ML.approved_models import predict_approved_texts
+
+result = predict_approved_texts("logistic_regression", ["Nội dung tin nhắn cần kiểm tra"])
+print(result["labels"], result["bundle_id"])
+```
+
+Hàm này dùng cùng normalization và threshold mặc định. `decision_scores` là decision function, không phải xác suất. Đổi model key thành `svm` cho SVM. `current.json` của lượt train local không thay đổi bản được ghim cho team.
+
+### Artifact local theo phiên bản
 
 Sau tuning, mỗi model được lưu dưới `artifacts/<model>/runs/<run_id>/` gồm `model.joblib` và `metadata.json`. Chỉ sau khi serialize, reload và kiểm tra dự đoán thành công, `current.json` mới được thay bằng một thao tác atomic để chọn cặp mới. Nếu cập nhật pointer thất bại, cặp hoàn chỉnh chưa được chọn có thể còn trong `runs/`; phiên bản đang dùng vẫn giữ nguyên.
 
-Load phiên bản đang chọn bằng helper dùng chung, chạy Python từ `backend/`:
+Load phiên bản đang chọn cho thí nghiệm local, chạy Python từ `backend/`:
 
 ```python
 from src.ML.artifacts import load_artifact
@@ -140,26 +165,24 @@ from src.ML.artifacts import load_artifact
 pipeline, metadata = load_artifact("artifacts/logistic_regression")
 ```
 
-Đổi đường dẫn thành `artifacts/svm` cho SVM. Helper kiểm tra hash của cặp được chọn trước khi load. Artifact cũ dạng hai file ngay dưới `artifacts/<model>/` vẫn đọc được khi chưa có `current.json`; các lần tuning mới không ghi đè hai file cũ này. Vì vậy, dùng `load_artifact()` thay cho việc load cứng file legacy ở thư mục gốc.
+Đổi đường dẫn thành `artifacts/svm` cho SVM. Helper kiểm tra hash khi có `current.json`; artifact legacy dạng hai file ngay dưới `artifacts/<model>/` vẫn đọc được nhưng không có xác thực hash từ pointer. Các thư mục training local được ignore. Để inference/benchmark bản của team, dùng loader trong `approved_models.py` và `models.lock.json` thay cho các đường dẫn local này.
 
 ### Final benchmark LR/SVM
 
 `backend/evaluation/` cung cấp metrics dùng chung, percentile bootstrap CI và benchmark held-out test. Benchmark không train, tune, fit lại TF-IDF hoặc chọn threshold. Final test chỉ chạy khi có xác nhận protocol của Leader:
 
 ```powershell
-..\\.venv\\Scripts\\python.exe -m evaluation.benchmark `
+..\.venv-preprocessing\Scripts\python.exe -B -m evaluation.benchmark `
   --confirm-final-test `
   --data-dir data/splits/ml `
   --manifest data/splits/manifest.json `
-  --lr-artifact-dir artifacts/logistic_regression `
-  --svm-artifact-dir artifacts/svm `
-  --report-dir experiments/benchmark `
+  --report-dir report/benchmark `
   --bootstrap-replicates 2000 `
   --confidence-level 0.95 `
   --seed 42
 ```
 
-Chạy lệnh từ thư mục `backend/`. Kết quả gồm JSON và Markdown trong `experiments/benchmark/`; bảng chính hiển thị Accuracy, Precision/Recall/F1 của lớp Scam (`pos_label=1`) và CI của F1. Confusion matrix dùng thứ tự `TN, FP, FN, TP`; paired bootstrap định nghĩa chênh lệch là `Logistic Regression - Support Vector Machine` và dùng cùng index mẫu cho hai model. Bootstrap sample thiếu một lớp vẫn được giữ lại và tính với `zero_division=0`.
+Chạy lệnh từ thư mục `backend/`. Mặc định benchmark load hai model ghim trong `models.lock.json`. Chỉ khi muốn thí nghiệm local mới truyền cả hai `--lr-artifact-dir` và `--svm-artifact-dir`; không được trộn một bản local với một bản ghim. Kết quả gồm JSON và Markdown trong `report/benchmark/` với tùy chọn trên; bảng chính hiển thị Accuracy, Precision/Recall/F1 của lớp Scam (`pos_label=1`) và CI của F1. Confusion matrix dùng thứ tự `TN, FP, FN, TP`; paired bootstrap định nghĩa chênh lệch là `Logistic Regression - Support Vector Machine` và dùng cùng index mẫu cho hai model. Bootstrap sample thiếu một lớp vẫn được giữ lại và tính với `zero_division=0`.
 
 CV trên `ml/train.csv`/`cv_folds.csv` là kết quả development dùng cho tuning; không được trộn với final test trên `ml/test.csv`. Nếu thiếu artifact SVM hoặc chưa có Leader approval, benchmark phải dừng và chưa được báo cáo bảng so sánh chính thức.
 
