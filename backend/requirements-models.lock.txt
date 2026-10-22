@@ -1,0 +1,7 @@
+# Runtime verified for the pinned LR/SVM bundle; use Python 3.12.x (verified: 3.12.14).
+# Other backend development dependencies remain in requirements.txt.
+scikit-learn==1.7.2
+numpy==2.5.4
+scipy==1.18.1
+joblib==1.6.0
+threadpoolctl==3.7.0

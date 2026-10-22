@@ -8,8 +8,8 @@ Backend gồm ứng dụng FastAPI, công cụ chuẩn bị dữ liệu, các h�
 
 - FastAPI app, endpoint và model inference chưa triển khai; service preprocessing đã có hàm dùng chung với pipeline offline.
 - `scripts/build_dataset.py` và `scripts/merge_team.py` có logic từ `build_dataset/` cũ, được chuyển nguyên nội dung.
-- `scripts/prepare_data.py` và `scripts/split_data.py` đã triển khai và có kiểm thử trong `tests/test_preprocessing.py`. Module trong `src/` và `evaluation/` vẫn là khung.
-- `lr.yaml` và `svm.yaml` là cấu hình rỗng (`{}`); chưa có hyperparameter mặc định hay loader YAML.
+- `scripts/prepare_data.py` và `scripts/split_data.py` đã triển khai và có kiểm thử trong `tests/test_preprocessing.py`. LR/SVM đã có baseline, tuning, lưu artifact và final benchmark; DL/JEV vẫn là khung.
+- `src/ML/config.py` đọc và kiểm tra `lr.yaml`/`svm.yaml`; cấu hình TF-IDF, estimator, search grid và metric chọn model được dùng chung cho train/tune.
 - `JEV/` là tên khu vực theo thiết kế; chưa chốt thư viện, giao thức hoặc tiêu chí tích hợp. Chưa có kết nối JEV thật.
 
 ## Cấu trúc thư mục
@@ -38,6 +38,12 @@ backend/
 │   │   │   └── svm.py
 │   │   ├── train_lr.py
 │   │   ├── train_svm.py
+│   │   ├── tune_lr.py
+│   │   ├── tune_svm.py
+│   │   ├── config.py
+│   │   ├── cv.py
+│   │   ├── artifacts.py
+│   │   ├── experiment_reporting.py
 │   │   └── configs/
 │   │       ├── lr.yaml
 │   │       └── svm.yaml
@@ -107,6 +113,79 @@ python -m venv .venv
 
 Dependencies gồm FastAPI, Uvicorn và `scikit-learn==1.7.2` cho grouped splits. Bổ sung dependencies training DL/JEV khi triển khai. `.env.example` là mẫu biến môi trường; module cấu hình chưa đọc các biến này.
 
+### Chạy LR/SVM
+
+Từ gốc repo, dùng Python của môi trường đã cài `backend/requirements.txt` (bao gồm PyYAML):
+
+```powershell
+.\.venv-preprocessing\Scripts\python.exe backend/src/ML/train_lr.py
+.\.venv-preprocessing\Scripts\python.exe backend/src/ML/tune_lr.py
+.\.venv-preprocessing\Scripts\python.exe backend/src/ML/train_svm.py
+.\.venv-preprocessing\Scripts\python.exe backend/src/ML/tune_svm.py
+```
+
+Cả bốn lệnh hỗ trợ `--config PATH`, `--data-dir PATH`, `--manifest PATH` và `--report-dir PATH`. Hai lệnh tuning còn hỗ trợ `--artifact-dir PATH` và `--no-save-artifact`. `evaluation.primary_metric` trong YAML quyết định metric refit; mặc định là `f1_scam`. Seed được truyền vào estimator và báo cáo ghi seed thực tế.
+
+`cv.py` dùng cùng `PredefinedSplit` và scoring cho hai model; TF-IDF được fit trong từng fold. `test.csv` chỉ được loader kiểm tra tính hợp lệ, không được dùng để fit hoặc chọn hyperparameter.
+
+### Model dùng chung cho team (Git LFS)
+
+Hai pipeline LR/SVM đã benchmark được ghim trong `models.lock.json` và lưu theo run ID trong `artifacts/approved/`; binary được quản lý bằng Git LFS. Dùng cùng commit và cùng lock file để chạy đúng bản model. Quy trình cài môi trường, cập nhật artifact và trách nhiệm review nằm trong [SHARED_MODELS.md](docs/SHARED_MODELS.md).
+
+Sau khi pull, chạy từ gốc repo:
+
+```powershell
+git lfs install --local
+git lfs pull
+.\.venv-preprocessing\Scripts\python.exe -B backend/scripts/verify_models.py
+```
+
+Lệnh kiểm tra hash model/metadata, phiên bản runtime, hash preprocessing và dự đoán trên 6 input tổng hợp cho mỗi model; không mở test set. Môi trường inference được khóa trong `requirements-models.lock.txt` (Python 3.12.x).
+
+Ví dụ inference từ raw text, chạy Python từ `backend/`:
+
+```python
+from src.ML.approved_models import predict_approved_texts
+
+result = predict_approved_texts("logistic_regression", ["Nội dung tin nhắn cần kiểm tra"])
+print(result["labels"], result["bundle_id"])
+```
+
+Hàm này dùng cùng normalization và threshold mặc định. `decision_scores` là decision function, không phải xác suất. Đổi model key thành `svm` cho SVM. `current.json` của lượt train local không thay đổi bản được ghim cho team.
+
+### Artifact local theo phiên bản
+
+Sau tuning, mỗi model được lưu dưới `artifacts/<model>/runs/<run_id>/` gồm `model.joblib` và `metadata.json`. Chỉ sau khi serialize, reload và kiểm tra dự đoán thành công, `current.json` mới được thay bằng một thao tác atomic để chọn cặp mới. Nếu cập nhật pointer thất bại, cặp hoàn chỉnh chưa được chọn có thể còn trong `runs/`; phiên bản đang dùng vẫn giữ nguyên.
+
+Load phiên bản đang chọn cho thí nghiệm local, chạy Python từ `backend/`:
+
+```python
+from src.ML.artifacts import load_artifact
+
+pipeline, metadata = load_artifact("artifacts/logistic_regression")
+```
+
+Đổi đường dẫn thành `artifacts/svm` cho SVM. Helper kiểm tra hash khi có `current.json`; artifact legacy dạng hai file ngay dưới `artifacts/<model>/` vẫn đọc được nhưng không có xác thực hash từ pointer. Các thư mục training local được ignore. Để inference/benchmark bản của team, dùng loader trong `approved_models.py` và `models.lock.json` thay cho các đường dẫn local này.
+
+### Final benchmark LR/SVM
+
+`backend/evaluation/` cung cấp metrics dùng chung, percentile bootstrap CI và benchmark held-out test. Benchmark không train, tune, fit lại TF-IDF hoặc chọn threshold. Final test chỉ chạy khi có xác nhận protocol của Leader:
+
+```powershell
+..\.venv-preprocessing\Scripts\python.exe -B -m evaluation.benchmark `
+  --confirm-final-test `
+  --data-dir data/splits/ml `
+  --manifest data/splits/manifest.json `
+  --report-dir report/benchmark `
+  --bootstrap-replicates 2000 `
+  --confidence-level 0.95 `
+  --seed 42
+```
+
+Chạy lệnh từ thư mục `backend/`. Mặc định benchmark load hai model ghim trong `models.lock.json`. Chỉ khi muốn thí nghiệm local mới truyền cả hai `--lr-artifact-dir` và `--svm-artifact-dir`; không được trộn một bản local với một bản ghim. Kết quả gồm JSON và Markdown trong `report/benchmark/` với tùy chọn trên; bảng chính hiển thị Accuracy, Precision/Recall/F1 của lớp Scam (`pos_label=1`) và CI của F1. Confusion matrix dùng thứ tự `TN, FP, FN, TP`; paired bootstrap định nghĩa chênh lệch là `Logistic Regression - Support Vector Machine` và dùng cùng index mẫu cho hai model. Bootstrap sample thiếu một lớp vẫn được giữ lại và tính với `zero_division=0`.
+
+CV trên `ml/train.csv`/`cv_folds.csv` là kết quả development dùng cho tuning; không được trộn với final test trên `ml/test.csv`. Nếu thiếu artifact SVM hoặc chưa có Leader approval, benchmark phải dừng và chưa được báo cáo bảng so sánh chính thức.
+
 Lệnh `uvicorn app.main:app --reload` từ `backend/` chỉ dùng được **sau khi** triển khai đối tượng `app` và routes. Hiện chưa có endpoint `/predict` hay API contract đã chốt.
 
 ## Script dữ liệu hiện có
@@ -121,7 +200,11 @@ Chạy từ gốc repo sau khi cài requirements:
 .\.venv\Scripts\python.exe backend/scripts/prepare_data.py --run-tests
 ```
 
-Hoặc từ `backend/`: `..\.venv\Scripts\python.exe scripts/prepare_data.py --run-tests`. Đường dẫn mặc định được tính theo vị trí script, không phụ thuộc thư mục hiện tại. Có thể thay bằng Python từ môi trường đang dùng. Lượt triển khai này dùng `.venv-preprocessing` riêng vì `.venv` cũ không khởi động được.
+Hoặc từ thư mục `backend/`:
+
+```powershell
+..\.venv\Scripts\python.exe scripts/prepare_data.py --run-tests
+```
 
 Các tùy chọn: `--source PATH`, `--data-dir PATH`, `--report-dir PATH`, `--seed 42`, `--similarity-threshold 0.85`. Đổi nguồn/quy tắc/seed phải tạo lại cả hai bộ split, thông báo cho mọi người dùng dữ liệu và giữ báo cáo mới. Test nguồn cũ không được gộp thêm vào nguồn vì đã nằm trong `full_dataset.csv`.
 

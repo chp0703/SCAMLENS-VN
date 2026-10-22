@@ -3,3 +3,4 @@ uvicorn[standard]>=0.30
 scikit-learn==1.7.2
 numpy>=1.22,<3
 joblib>=1.2,<2
+PyYAML>=6.0,<7

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "bundle_id": "ml-evaluated-20261022-v1",
+  "status": "shared_evaluated_baseline_data_provisional",
+  "source_code_commit": "33890d7932c30ce37ce42b352b8d6e3c7cb902bc",
+  "benchmark_run_id": "20261022T151307621096Z-5198d4ec",
+  "dataset_manifest_sha256": "75396a483de7763f3ad4f9391f789a3240313c6fa38b33260a0c578c6d4d81a0",
+  "benchmark_test_sha256": "9cad49dd254f6a9db41f72593a379b80c646ba421c00fd8ac7cc86a1d83c7ec8",
+  "runtime": {
+    "python_series": "3.12",
+    "validated_python": "3.12.14",
+    "packages": {
+      "scikit-learn": "1.7.2",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "joblib": "1.6.0",
+      "threadpoolctl": "3.7.0"
+    }
+  },
+  "preprocessing": {
+    "path": "app/services/preprocessing.py",
+    "rules_version": "1.0.0",
+    "sha256_lf": "7f96b339b300fc4b2bcec361365ce799b4e59b9963843fe7d54789d447b86dcd"
+  },
+  "label_mapping": {
+    "0": "Ham",
+    "1": "Spam/Scam (source combined label)"
+  },
+  "training_source_sha256": {
+    "cv_folds.csv": "a773f95871c200e62c0f4209877b7926a43d34e94c3aa9cb466dd842e3f69e44",
+    "train.csv": "f584db089f3558b382a7ce0707a31a31cc5eae0835ad05374fd86c6e5f09fa12"
+  },
+  "models": {
+    "logistic_regression": {
+      "run_id": "20261020T111352332347Z-493e9e46",
+      "artifact_dir": "artifacts/approved/logistic_regression/20261020T111352332347Z-493e9e46",
+      "model_sha256": "ddeacc87611d85d09992c6c5c58b8b1a5fac7e7607faba8123b42d50b6c95e9f",
+      "metadata_sha256": "779ee4cb5666c2fc440b502635b90a23b26a1aa2e5684047290338797f80d975",
+      "decision_rule": {
+        "method": "pipeline.predict",
+        "score_type": "decision_function",
+        "threshold": 0.0
+      }
+    },
+    "svm": {
+      "run_id": "20261020T181805443565Z-82737509",
+      "artifact_dir": "artifacts/approved/svm/20261020T181805443565Z-82737509",
+      "model_sha256": "f1b8aa616cc119e0882e72f38a1bcbcfc1f7b3c4bafaf119be2cb4c66d02717b",
+      "metadata_sha256": "2e31ff51374cf515622887412b9186678eb526e03af21154f3dc563058f18512",
+      "decision_rule": {
+        "method": "pipeline.predict",
+        "score_type": "decision_function",
+        "threshold": 0.0
+      }
+    }
+  },
+  "smoke_test": {
+    "path": "artifacts/approved/smoke_cases.json",
+    "sha256": "49db63ad6c49c2d9cc00b83c673434b267b3bbfcf912824676d7540f4066518a",
+    "score_absolute_tolerance": 1e-08
+  }
+}
