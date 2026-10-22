@@ -37,7 +37,7 @@ git pull --ff-only
 git lfs pull
 ```
 
-Chọn cùng nhánh/commit đã được team chốt. Hiện triển khai nằm trên `feat/member3-evaluation`; khi PR được merge, team chuyển về commit tương ứng trên `main`. LFS lưu binary ngoài Git object thông thường; phải tải được cả binary, không chỉ pointer.
+Chọn cùng nhánh/commit đã được team chốt. Nhánh tích hợp hiện tại là `feat/baseline-ml`, hợp nhất preprocessing và cả ba nhánh Member 1/2/3; khi PR được merge, team chuyển về commit tương ứng trên `main`. LFS lưu binary ngoài Git object thông thường; phải tải được cả binary, không chỉ pointer.
 
 Môi trường chính thức cho bundle này: Python 3.12.x (đã kiểm chứng 3.12.14), cùng phiên bản package khóa trong `requirements-models.lock.txt`. Dùng môi trường riêng nếu môi trường dev có dependencies khác:
 

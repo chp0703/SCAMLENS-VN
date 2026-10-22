@@ -4,6 +4,8 @@ ScamLens VN hướng tới công cụ phân tích văn bản người dùng nh�
 
 ## Trạng thái
 
+Nhánh `feat/baseline-ml` hợp nhất `preprocessing`, `feat/member1-lr`, `feat/member2-svm` và `feat/member3-evaluation`, gồm dữ liệu/fold dùng chung, LR/SVM, đánh giá cuối cùng và artifact được ghim qua Git LFS.
+
 - `frontend/`: React + TypeScript dùng Vite. Xem [README frontend](frontend/README.md).
 - `backend/`: đã có preprocessing, training/tuning LR/SVM, inference từ artifact được ghim và final benchmark. Hai pipeline dùng chung được lưu qua Git LFS. API và training DL/JEV chưa triển khai.
 - Hai script `build_dataset.py` và `merge_team.py` đã có logic tạo/gộp CSV. Cấu trúc thư mục chưa chứng minh hệ thống chạy hoàn chỉnh.
