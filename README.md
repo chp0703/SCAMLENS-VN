@@ -16,16 +16,6 @@ Nhánh `feat/baseline-ml` hợp nhất `preprocessing`, `feat/member1-lr`, `feat
 SCAMLENS-VN/
 ├── frontend/                 # React + TypeScript
 ├── backend/
-│   ├── app/                  # FastAPI: routes, config, schemas, services
-│   ├── src/                  # Phát triển model: ML/, DL/, JEV/
-│   ├── data/                 # raw/, processed/, splits/
-│   ├── scripts/              # Tạo, gộp, chuẩn bị và chia dữ liệu
-│   ├── evaluation/           # Metrics, bootstrap và benchmark chung
-│   ├── experiments/          # Kết quả thí nghiệm local
-│   ├── artifacts/            # Model đã lưu
-│   ├── tests/                # Test preprocessing và khung test API/model
-│   ├── requirements.txt
-│   └── README.md
 ├── .gitignore
 └── README.md
 ```

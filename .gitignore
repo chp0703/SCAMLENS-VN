@@ -6,5 +6,9 @@
 /backend/tests/.tmp/
 /ScamLens_VN_Ke_Hoach_8_Tuan_Gon.docx
 /ScamLens_VN_Master_Project_Proposal.pdf
+/backend/docs/ScamLens_Tasks_v2.docx
+/CLAUDE.md
+/frontend/docs/worklogs/
+/backend/docs/worklogs/
 
 # Track the shared dataset and preprocessing outputs; exclude other local data.
