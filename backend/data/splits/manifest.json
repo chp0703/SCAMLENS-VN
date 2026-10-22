@@ -1,0 +1,257 @@
+{
+  "checks": {
+    "all_partitions_have_both_classes": true,
+    "clean_rows_accounted": true,
+    "csv_utf8_bom_roundtrip": true,
+    "cv_fold0_equals_dl_val": true,
+    "cv_train_ids_once": true,
+    "cv_validation_statistics": {
+      "0": {
+        "groups": 343,
+        "ham": 306,
+        "rows": 419,
+        "scam": 113,
+        "scam_fraction": 0.26968973747016706
+      },
+      "1": {
+        "groups": 345,
+        "ham": 318,
+        "rows": 414,
+        "scam": 96,
+        "scam_fraction": 0.2318840579710145
+      },
+      "2": {
+        "groups": 345,
+        "ham": 264,
+        "rows": 390,
+        "scam": 126,
+        "scam_fraction": 0.3230769230769231
+      },
+      "3": {
+        "groups": 346,
+        "ham": 289,
+        "rows": 396,
+        "scam": 107,
+        "scam_fraction": 0.2702020202020202
+      },
+      "4": {
+        "groups": 342,
+        "ham": 258,
+        "rows": 382,
+        "scam": 124,
+        "scam_fraction": 0.32460732984293195
+      }
+    },
+    "dl_union_equals_ml_train": true,
+    "id_text_group_disjoint": true,
+    "normalization_idempotent": true,
+    "normalized_raw_roundtrip": true,
+    "shared_test_hash_identical": true,
+    "shared_test_identical": true,
+    "source_accounting_complete": true,
+    "source_sha256_unchanged": true
+  },
+  "counts": {
+    "accounting": {
+      "duplicate": 423,
+      "kept": 2564,
+      "quarantined": 4,
+      "rejected": 0
+    },
+    "clean": 2564,
+    "clean_distribution": {
+      "groups": 2153,
+      "ham": 1868,
+      "rows": 2564,
+      "scam": 696,
+      "scam_fraction": 0.2714508580343214
+    },
+    "reasons": {
+      "after_masking": 44,
+      "before_masking": 379,
+      "label_conflict_after_masking": 2,
+      "label_conflict_before_masking": 2
+    },
+    "source": 2991,
+    "source_labels": {
+      "0": 2193,
+      "1": 798
+    }
+  },
+  "dependencies": {
+    "joblib": "1.6.0",
+    "numpy": "2.5.4",
+    "scikit-learn": "1.7.2",
+    "scipy": "1.18.1",
+    "threadpoolctl": "3.7.0"
+  },
+  "length_statistics": {
+    "char": {
+      "iqr_lower": -63.5,
+      "iqr_upper": 444.5,
+      "max": 881,
+      "median": 166.0,
+      "min": 1,
+      "p25": 127.0,
+      "p75": 254.0,
+      "p95": 379.0
+    },
+    "word": {
+      "iqr_lower": -15.0,
+      "iqr_upper": 89.0,
+      "max": 180,
+      "median": 33.0,
+      "min": 1,
+      "p25": 24.0,
+      "p75": 50.0,
+      "p95": 75.0
+    }
+  },
+  "output_sha256": {
+    "processed/accounting.csv": "10f5b914e9633ec2ea48f384639bb4ece5077f329a966db61ef3b5ac77d16f2a",
+    "processed/clean.csv": "1058e53a025eac08b5c684404f1b5df22fd7bbfd663773d18adca6043cf9389f",
+    "processed/duplicates.csv": "fb3b571db70511cb70d3fa145630aa841cf585d6d77a38fa4165c0d6aafe4470",
+    "processed/groups.csv": "83870019748e89c9094444b073c76361749c6a94d205afb9f8d1d66f6d39b7bf",
+    "processed/length_outliers.csv": "3e754218ee87f48533f5534489c2d08790f81b71617dc99520375276cfd68202",
+    "processed/near_duplicate_pairs.csv": "bb8e7fc51c6153cda48d56067f68bbefb8dc4b1303a5da32fc4c672c6751dfac",
+    "processed/quarantine.csv": "2eb062e54661d23e6444a5fc05f552dab4389a33f97fbf3e045a30717fa23f24",
+    "processed/rejected.csv": "f65e6586edf7445e54436094e90301a2330714af3f88ebab553858c1cadfea19",
+    "splits/dl_jev/test.csv": "9cad49dd254f6a9db41f72593a379b80c646ba421c00fd8ac7cc86a1d83c7ec8",
+    "splits/dl_jev/train.csv": "43aaee192733aaf0a95c6ad79156e57218b9b733b7e80d807cf92e9c8c14d966",
+    "splits/dl_jev/val.csv": "7197bc184aff837342656c089fa531fb888e7a6bbbf8314eab80d2ce7a2e8aaa",
+    "splits/ml/cv_folds.csv": "a773f95871c200e62c0f4209877b7926a43d34e94c3aa9cb466dd842e3f69e44",
+    "splits/ml/test.csv": "9cad49dd254f6a9db41f72593a379b80c646ba421c00fd8ac7cc86a1d83c7ec8",
+    "splits/ml/train.csv": "f584db089f3558b382a7ce0707a31a31cc5eae0835ad05374fd86c6e5f09fa12"
+  },
+  "partitions": {
+    "dl_jev/test.csv": {
+      "groups": 432,
+      "ham": 433,
+      "rows": 563,
+      "scam": 130,
+      "scam_fraction": 0.23090586145648312
+    },
+    "dl_jev/train.csv": {
+      "groups": 1378,
+      "ham": 1129,
+      "rows": 1582,
+      "scam": 453,
+      "scam_fraction": 0.286346396965866
+    },
+    "dl_jev/val.csv": {
+      "groups": 343,
+      "ham": 306,
+      "rows": 419,
+      "scam": 113,
+      "scam_fraction": 0.26968973747016706
+    },
+    "ml/test.csv": {
+      "groups": 432,
+      "ham": 433,
+      "rows": 563,
+      "scam": 130,
+      "scam_fraction": 0.23090586145648312
+    },
+    "ml/train.csv": {
+      "groups": 1721,
+      "ham": 1435,
+      "rows": 2001,
+      "scam": 566,
+      "scam_fraction": 0.28285857071464265
+    }
+  },
+  "python": "3.12.14",
+  "relationships": {
+    "dl_validation": "ml/cv_folds.csv fold_id=0",
+    "shared_test": "ml/test.csv == dl_jev/test.csv byte-for-byte",
+    "train_pool": "ml/train.csv == union(dl_jev/train.csv, dl_jev/val.csv)"
+  },
+  "review": {
+    "large_groups": 4,
+    "largest_group": 67,
+    "length_outliers": 64,
+    "mixed_label_groups": 2,
+    "near_duplicate_pairs": 1251,
+    "pending_groups": 172
+  },
+  "rules": {
+    "conflicting_exact_labels": "quarantine_all",
+    "duplicate_representative": "lexicographically_smallest_message_id",
+    "entity_order": [
+      "URL",
+      "EMAIL",
+      "PHONE"
+    ],
+    "label_mapping": {
+      "0": "Ham",
+      "1": "Scam (source includes spam/scam)"
+    },
+    "large_group_min_size": 10,
+    "length_outlier": "1.5 IQR; retained",
+    "lowercase": true,
+    "near_duplicate": "character_5gram_set_jaccard_connected_components",
+    "near_duplicate_threshold": 0.85,
+    "phone": "Vietnam mobile 03/05/07/08/09 (10 digits), landline 02 (11 digits); +84/0084 supported",
+    "reserved_tokens": [
+      "URL",
+      "PHONE",
+      "EMAIL",
+      "NUMBER",
+      "BANK_ACC",
+      "MONEY",
+      "TIME",
+      "DATE",
+      "NAME",
+      "POINT"
+    ],
+    "unicode": "NFC",
+    "url": "http(s):// or www.; trailing punctuation retained",
+    "version": "1.0.0",
+    "whitespace": "collapse_and_trim"
+  },
+  "schema_version": 1,
+  "scope": "full_preprocessing",
+  "source": {
+    "declared_metadata": {
+      "downloaded_at_utc": "2026-10-13T17:29:14.7430630Z",
+      "license_declared_by_source": "CC BY 4.0",
+      "revision": "464a028878023598e16f2f344ee36f7d5d74257f",
+      "rows": {
+        "full": 2991,
+        "test": 597,
+        "train": 2394
+      },
+      "sha256": {
+        "QUICKSTART_GUIDE.md": "6823cb60501118f0b3affbba728cc70e062df2a566f5718c1d500c31d1f21816",
+        "README.md": "bb8faa7a649d2c7a08da60c47bfdf416404836cd9194d06518c6f1b62ecb3ee7",
+        "full_dataset.csv": "710cd7b56ef1b4aa82e72c1be0f46a5c89a5fdce8382b30874b3cea494d16e3e",
+        "test.csv": "1b71ae4f9af49e319612e608eb9154ff26eb23981294ab1a89887d078e97ec10",
+        "train.csv": "d2e2be037bd7f1f63979c1dd8ec2a2c44c4247bb7730467b37976c1a93936732"
+      },
+      "source": "https://github.com/trannguyenthaituan251209/vietnamese_sms_dataset",
+      "test_rows_with_exact_message_in_train": 47
+    },
+    "path": "E:\\TDTT\\SCAMLENS-VN\\backend\\data\\raw\\vietnamese_sms_dataset\\full_dataset.csv",
+    "sha256": "710cd7b56ef1b4aa82e72c1be0f46a5c89a5fdce8382b30874b3cea494d16e3e"
+  },
+  "split": {
+    "algorithm": "StratifiedGroupKFold",
+    "inner_dl_validation_fold": 0,
+    "n_splits": 5,
+    "outer_test_fold": 0,
+    "random_state": 42,
+    "shuffle": true,
+    "target_fractions": {
+      "dl_jev": [
+        0.64,
+        0.16,
+        0.2
+      ],
+      "ml": [
+        0.8,
+        0.2
+      ]
+    }
+  },
+  "status": "provisional"
+}

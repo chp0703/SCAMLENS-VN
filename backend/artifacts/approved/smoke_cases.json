@@ -1,0 +1,49 @@
+{
+  "purpose": "Synthetic compatibility regression examples; not ground truth or a quality benchmark.",
+  "raw_texts": [
+    "Chào bạn, chiều nay mình gặp nhau lúc 5 giờ nhé.",
+    "nhan thuong gap",
+    "Ban da trung thuong 100 trieu. Nhan ngay tai https://example.com/prize",
+    "Liên hệ 0901234567 hoặc support@example.com để biết lịch họp.",
+    "  XIN CHÀO   [url]  ",
+    ""
+  ],
+  "models": {
+    "logistic_regression": {
+      "labels": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "decision_scores": [
+        1.6546536981994677,
+        3.7093841234552953,
+        3.442520563316882,
+        1.6499305728164968,
+        2.199401056202788,
+        1.5120765952853121
+      ]
+    },
+    "svm": {
+      "labels": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "decision_scores": [
+        0.43613154570577284,
+        1.1186794829704816,
+        1.0813943576473604,
+        0.4073511699727208,
+        0.7342255765786576,
+        0.38362519987372423
+      ]
+    }
+  }
+}

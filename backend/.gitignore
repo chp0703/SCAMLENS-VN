@@ -8,3 +8,14 @@ __pycache__/
 venv/
 artifacts/*
 !artifacts/.gitkeep
+!artifacts/approved/
+artifacts/approved/**
+!artifacts/approved/**/
+!artifacts/approved/**/model.joblib
+!artifacts/approved/**/metadata.json
+!artifacts/approved/smoke_cases.json
+experiments/*
+!experiments/logistic_regression/
+!experiments/logistic_regression/runs/
+!experiments/logistic_regression/runs/*.md
+!experiments/logistic_regression/runs/*.json

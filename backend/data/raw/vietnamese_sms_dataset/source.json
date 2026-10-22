@@ -1,0 +1,19 @@
+{
+  "source": "https://github.com/trannguyenthaituan251209/vietnamese_sms_dataset",
+  "revision": "464a028878023598e16f2f344ee36f7d5d74257f",
+  "downloaded_at_utc": "2026-10-13T17:29:14.7430630Z",
+  "license_declared_by_source": "CC BY 4.0",
+  "rows": {
+    "full": 2991,
+    "train": 2394,
+    "test": 597
+  },
+  "test_rows_with_exact_message_in_train": 47,
+  "sha256": {
+    "full_dataset.csv": "710cd7b56ef1b4aa82e72c1be0f46a5c89a5fdce8382b30874b3cea494d16e3e",
+    "train.csv": "d2e2be037bd7f1f63979c1dd8ec2a2c44c4247bb7730467b37976c1a93936732",
+    "test.csv": "1b71ae4f9af49e319612e608eb9154ff26eb23981294ab1a89887d078e97ec10",
+    "README.md": "bb8faa7a649d2c7a08da60c47bfdf416404836cd9194d06518c6f1b62ecb3ee7",
+    "QUICKSTART_GUIDE.md": "6823cb60501118f0b3affbba728cc70e062df2a566f5718c1d500c31d1f21816"
+  }
+}
